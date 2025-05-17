@@ -1,0 +1,42 @@
+C51 COMPILER V9.54   KEY                                                                   04/10/2025 12:33:29 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE KEY
+OBJECT MODULE PLACED IN .\Objects\Key.obj
+COMPILER INVOKED BY: D:\Program Files\keil5\C51\BIN\C51.EXE ..\Driver\Key.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Driver) D
+                    -EBUG OBJECTEXTEND PRINT(.\Listings\Key.lst) OBJECT(.\Objects\Key.obj)
+
+line level    source
+
+   1          #include "Key.h"
+   2          
+   3          uc Key_Read(void)
+   4          {
+   5   1              uc temp = 0;
+   6   1              P35 = 0; P34 = 1;
+   7   1              if (P30 == 0) temp = 15;
+   8   1              if (P31 == 0) temp = 14;
+   9   1              if (P32 == 0) temp = 13;
+  10   1              if (P33 == 0) temp = 12;
+  11   1              
+  12   1              P35 = 1; P34 = 0;
+  13   1              if (P30 == 0) temp = 19;
+  14   1              if (P31 == 0) temp = 18;
+  15   1              if (P32 == 0) temp = 17;
+  16   1              if (P33 == 0) temp = 16;
+  17   1              return temp;
+  18   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     51    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,51 @@
+C51 COMPILER V9.54   INIT                                                                  04/10/2025 13:26:18 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE INIT
+OBJECT MODULE PLACED IN .\Objects\Init.obj
+COMPILER INVOKED BY: D:\Program Files\keil5\C51\BIN\C51.EXE ..\Driver\Init.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Driver) 
+                    -DEBUG OBJECTEXTEND PRINT(.\Listings\Init.lst) OBJECT(.\Objects\Init.obj)
+
+line level    source
+
+   1          #include "Init.h"
+   2          
+   3          void System_Init(void)
+   4          {
+   5   1              uc gate;
+   6   1              
+   7   1              P0 = 0XFF;              //关LED
+   8   1              gate = P2 & 0X1F;
+   9   1              gate |= 0X80;
+  10   1              P2 = gate;
+  11   1              gate = P2 & 0X1F;
+  12   1              P2 = gate;
+  13   1              
+  14   1              P0 = 0X00;              //关外设
+  15   1              gate = P2 & 0X1F;
+  16   1              gate |= 0XA0;
+  17   1              P2 = gate;
+  18   1              gate = P2 & 0X1F;
+  19   1              P2 = gate;
+  20   1              
+  21   1              P0 = 0XFF;              //关SEG
+  22   1              gate = P2 & 0X1F;
+  23   1              gate |= 0XE0;
+  24   1              P2 = gate;
+  25   1              gate = P2 & 0X1F;
+  26   1              P2 = gate;
+  27   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     58    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

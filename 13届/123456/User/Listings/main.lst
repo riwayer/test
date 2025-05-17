@@ -1,0 +1,235 @@
+C51 COMPILER V9.54   MAIN                                                                  04/10/2025 15:42:26 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Program Files\keil5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\Driver) DEBUG OBJE
+                    -CTEXTEND PRINT(.\Listings\main.lst) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          /*=========放头文件区=========*/
+   2          #include "Init.h"
+   3          #include "Key.h"
+   4          #include "Seg.h"
+   5          #include "Led.h"
+   6          #include "Ds18b20.h"
+   7          #include "ds1302.h"
+   8          
+   9          /*=========变量声明区=========*/
+  10          uc               All_Index;
+  11          ui               Seg_350ms;
+  12          uc               Key_10ms;
+  13          uc               Led_100ms;
+  14          idata uc Seg_Buf[] = {10, 10, 10, 10, 10, 10, 10, 10};
+  15          idata uc Seg_Point[] = {0, 0, 0, 0, 0, 0, 0, 0};
+  16          idata uc Led_Buf[] = {0, 0, 0, 0, 0, 0, 0, 0};
+  17          uc               Key_Val, Key_Down, Key_Up, Key_Old;
+  18          
+  19          uc               Seg_Mode;                      //0-温度显示界面，1-时间显示，2-参数设置
+  20          pdata ui Temprature_10x = 0;
+  21          uc code  Time[] = {0x23, 0x25, 0x20};
+  22          uc               Time_Read[3];
+  23          uc               Temperature_Set = 23;
+  24          bit      S17_Flag = 0;  // 0-参数界面减一， 1-时间界面显示秒
+  25          
+  26          bit              Realy_Flag = 0;        //0-温度控制， 1-时间控制
+  27          idata uc Time_AlamL1[3];                //闹钟
+  28          bit              Time_AlamL1_Flag;      //0-不在时间内， 1-在时间内
+  29          uc               L3_100ms;
+  30          bit      L3_Flish_Flag;
+  31          
+  32          
+  33          /*=========其他函数区=========*/
+  34          void Realy_Proc(void)
+  35          {
+  36   1              //      if (Key_10ms < 10) return;                      //测试时序，不再进行10ms的减速
+  37   1      //      Key_10ms = 0;
+  38   1              
+  39   1              if (Realy_Flag)
+  40   1                      N_Relay(Time_AlamL1_Flag);
+  41   1              else
+  42   1                      N_Relay((Temprature_10x) > Temperature_Set*10); 
+  43   1      }
+  44          void Led_Proc(void)
+  45          {
+  46   1              if (Led_100ms < 50) return;
+  47   1              Led_100ms = 0;
+  48   1              
+  49   1              Ds1302_Read(Time_Read);
+  50   1              if ((Time_Read[1] == 0) && (Time_Read[2] == 0))//整点闹钟
+  51   1              {       
+  52   2                      Time_AlamL1[2] = Time_Read[2];
+  53   2                      Time_AlamL1_Flag = 1;
+  54   2              }
+C51 COMPILER V9.54   MAIN                                                                  04/10/2025 15:42:26 PAGE 2   
+
+  55   1              if ((Time_AlamL1[2] / 16 % 16 + 5) == Time_Read[2])
+  56   1              {
+  57   2                      Time_AlamL1_Flag = 0;
+  58   2              }
+  59   1              
+  60   1              Led_Buf[0] = Time_AlamL1_Flag ? 1 : 0;
+  61   1              Led_Buf[1] = Realy_Flag ? 0 : 1;
+  62   1              Led_Buf[2] = ((Temprature_10x) > Temperature_Set*10) && L3_Flish_Flag && (!Realy_Flag);
+  63   1      }
+  64          void Delay750ms()               //@12.000MHz
+  65          {
+  66   1              unsigned char i, j, k;
+  67   1      
+  68   1              _nop_();
+  69   1              _nop_();
+  70   1              i = 35;
+  71   1              j = 51;
+  72   1              k = 182;
+  73   1              do
+  74   1              {
+  75   2                      do
+  76   2                      {
+  77   3                              while (--k);
+  78   3                      } while (--j);
+  79   2              } while (--i);
+  80   1      }
+  81          
+  82          /*=========按键函数区=========*/
+  83          void Key_Proc(void)
+  84          {
+  85   1              if (Key_10ms < 10) return;
+  86   1              Key_10ms = 0;
+  87   1              
+  88   1              Key_Val = Key_Read();
+  89   1              Key_Down = Key_Val & (Key_Old ^ Key_Val);
+  90   1              Key_Up = Key_Val & ~(Key_Old ^ Key_Val);
+  91   1              Key_Old = Key_Val;
+  92   1              
+  93   1              if ((Key_Down == 17) &&(Seg_Mode == 2))         //S17//参数界面
+  94   1              {                       
+  95   2                      if (--Temperature_Set < 10)
+  96   2                              Temperature_Set = 10;                           
+  97   2              }
+  98   1              if ((Seg_Mode == 1) && (Key_Old == 17))
+  99   1                      S17_Flag = 1;
+ 100   1              else
+ 101   1                      S17_Flag = 0;
+ 102   1              
+ 103   1              switch(Key_Down)
+ 104   1              {
+ 105   2                      case 12:        //界面切换
+ 106   2                              if (++Seg_Mode == 3)
+ 107   2                                      Seg_Mode = 0;
+ 108   2                      break;
+ 109   2                      case 13:        //模式切换
+ 110   2                              Realy_Flag ^= 1;
+ 111   2                      break;
+ 112   2                      case 16:        //参数加
+ 113   2                              if (Seg_Mode != 2) break;
+ 114   2                              if (++Temperature_Set > 99)
+ 115   2                                      Temperature_Set = 99;
+ 116   2                      break;
+C51 COMPILER V9.54   MAIN                                                                  04/10/2025 15:42:26 PAGE 3   
+
+ 117   2              }
+ 118   1      }
+ 119          /*=========显示函数区=========*/
+ 120          void Seg_Proc(void)
+ 121          {
+ 122   1              if (Seg_350ms < 500) return;
+ 123   1              Seg_350ms = 0;
+ 124   1              
+ 125   1              switch(Seg_Mode)
+ 126   1              {
+ 127   2                      case 0: //温度显示界面
+ 128   2                              Temprature_10x =  (ui)(10*Ds18b20_Read());
+ 129   2                              Seg_Buf[0] = 11;
+ 130   2                              Seg_Buf[1] = 1;
+ 131   2                              Seg_Buf[2] = Seg_Buf[3] = Seg_Buf[4] = 10;
+ 132   2                              Seg_Buf[5] = Temprature_10x / 100 % 10;
+ 133   2                              Seg_Buf[6] = Temprature_10x / 10 % 10;
+ 134   2                              Seg_Buf[7] = Temprature_10x % 10;
+ 135   2                              Seg_Point[6] = 1;
+ 136   2                      break;
+ 137   2                      case 1:         //时间显示界面
+ 138   2                              Ds1302_Read(Time_Read);
+ 139   2                              Seg_Point[6] = 0;
+ 140   2                              Seg_Buf[0] = 11;
+ 141   2                              Seg_Buf[1] = 2;
+ 142   2                              Seg_Buf[2] = 10;
+ 143   2                              Seg_Buf[3] =  S17_Flag ? Time_Read[1] / 16 % 16 : Time_Read[0] / 16 % 16;
+ 144   2                              Seg_Buf[4] =  S17_Flag ? Time_Read[1] % 16              : Time_Read[0] % 16;
+ 145   2                              Seg_Buf[5] = 12;//Key_Old % 
+ 146   2                              Seg_Buf[6] =  S17_Flag ? Time_Read[2] / 16 % 16 : Time_Read[1] / 16 % 16;
+ 147   2                              Seg_Buf[7] =  S17_Flag ? Time_Read[2] % 16              : Time_Read[1] % 16;
+ 148   2                      break;
+ 149   2                      case 2:         //参数设置
+ 150   2                              Seg_Buf[0] = 11;
+ 151   2                              Seg_Buf[1] = 3;
+ 152   2                              Seg_Buf[2] = Seg_Buf[3] = Seg_Buf[4] = Seg_Buf[5] = 10;
+ 153   2                              Seg_Buf[6] = Temperature_Set / 10 % 10;
+ 154   2                              Seg_Buf[7] = Temperature_Set % 10;
+ 155   2                      break;
+ 156   2              }
+ 157   1      }
+ 158          /*=========中断函数区=========*/
+ 159          void Timer0Init(void)           //1毫秒@12.000MHz
+ 160          {
+ 161   1              AUXR &= 0x7F;           //定时器时钟12T模式
+ 162   1              TMOD &= 0xF0;           //设置定时器模式
+ 163   1              TL0 = 0x18;             //设置定时初值
+ 164   1              TH0 = 0xFC;             //设置定时初值
+ 165   1              TF0 = 0;                //清除TF0标志
+ 166   1              TR0 = 1;                //定时器0开始计时
+ 167   1              
+ 168   1              EA = 1;
+ 169   1              ET0 = 1;
+ 170   1      }
+ 171          
+ 172          /*=========中断服务区=========*/
+ 173          void Timer0Server(void)         interrupt 1
+ 174          {
+ 175   1              TL0 = 0x18;             //设置定时初值
+ 176   1              TH0 = 0xFC;             //设置定时初值
+ 177   1              ++Key_10ms;
+ 178   1              ++Seg_350ms;
+C51 COMPILER V9.54   MAIN                                                                  04/10/2025 15:42:26 PAGE 4   
+
+ 179   1              ++Led_100ms;
+ 180   1              if (++All_Index == 8) All_Index = 0;
+ 181   1              Seg_Disp(All_Index, Seg_Buf[All_Index], Seg_Point[All_Index]);
+ 182   1              Led_Disp(All_Index, Led_Buf[All_Index]);
+ 183   1              if (++L3_100ms == 100)
+ 184   1              {
+ 185   2                      L3_100ms = 0;
+ 186   2                      L3_Flish_Flag ^= 1;
+ 187   2              }
+ 188   1      }
+ 189          /*=========用户主函数=========*/
+ 190          void main(void)
+ 191          {
+ 192   1              System_Init();
+ 193   1              Timer0Init();
+ 194   1              Ds1302_Write(Time);
+ 195   1              Ds18b20_Read();
+ 196   1              Delay750ms();
+ 197   1              
+ 198   1              while(1)
+ 199   1              {
+ 200   2                      Key_Proc();
+ 201   2                      Led_Proc();
+ 202   2                      Seg_Proc();
+ 203   2                      Realy_Proc();
+ 204   2              }
+ 205   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    772    ----
+   CONSTANT SIZE    =      3    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =      2    ----
+   DATA SIZE        =     15    ----
+   IDATA SIZE       =     27    ----
+   BIT SIZE         =      4    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
